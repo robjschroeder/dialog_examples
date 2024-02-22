@@ -24,6 +24,7 @@ export PATH=/usr/bin:/bin:/usr/sbin:/sbin
 # Script Version and Client-Side Log
 scriptVersion="1.0.0"
 scriptLog="/var/log/com.company.log"
+exitCode="0"
 
 # swiftDialog Binary & Logs 
 swiftDialogMinimumRequiredVersion="2.4.0.4750"
@@ -56,7 +57,6 @@ overlay=$( defaults read /Library/Preferences/com.jamfsoftware.jamf.plist self_s
 
 osVersion=$( sw_vers -productVersion )
 osVersionExtra=$( sw_vers -productVersionExtra ) 
-osBuild=$( sw_vers -buildVersion )
 osMajorVersion=$( echo "${osVersion}" | awk -F '.' '{print $1}' )
 
 # Report RSR sub-version if applicable
@@ -149,9 +149,7 @@ function dialogInstall() {
 
         # Display a so-called "simple" dialog if Team ID fails to validate
         osascript -e 'display dialog "Please advise your Support Representative of the following error:\r\r• Dialog Team ID verification failed\r\r" with title "Setup Your Mac: Error" buttons {"Close"} with icon caution'
-        completionActionOption="Quit"
-        exitCode="1"
-        quitScript
+        quitScript 1
 
     fi
 
@@ -163,9 +161,6 @@ function dialogInstall() {
 
 
 function dialogCheck() {
-
-    # Output Line Number in `verbose` Debug Mode
-    if [[ "${debugMode}" == "verbose" ]]; then preFlight "# # # SETUP YOUR MAC VERBOSE DEBUG MODE: Line No. ${LINENO} # # #" ; fi
 
     # Check for Dialog and install if not found
     if [ ! -e "/Library/Application Support/Dialog/Dialog.app" ]; then
@@ -198,6 +193,8 @@ function dialogCheck() {
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 function quitScript() {
+        
+    exitCode=$1
 
     info "*** QUITTING ***"
 
@@ -207,7 +204,7 @@ function quitScript() {
         rm "${dialogCommandFile}"
     fi
 
-    exit "${1}"
+    exit "$exitCode"
 
 }
 
@@ -284,10 +281,10 @@ case ${dialogOutput} in
     "0")
     info "User clicked continue"
     su - "${loggedInUser}" -c "/usr/bin/open \"${FindMyMac}\""
-    quitScript
+    quitScript 0
     ;;
     "2")
     info "User clicked quit"
-    quitScript
+    quitScript 1
     ;;
 esac
